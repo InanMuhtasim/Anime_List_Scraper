@@ -47,6 +47,7 @@ class MalSpiderSpider(scrapy.Spider):
                     if anime_name_eng != ""
                     else anime_info["anime_title"]
                 )
+                anime_url = anime_info["anime_url"]
 
                 anime = AnimeItem()
 
@@ -54,6 +55,10 @@ class MalSpiderSpider(scrapy.Spider):
                 anime["Name"] = anime_name
                 anime["Full_Info"] = anime_info
 
+                yield response.follow(
+                    f"https://myanimelist.net{anime_url}",
+                    callback=self.rating_parse,
+                )
                 yield anime
 
             # If there is more than 300 items it is needed because at a time only 300 items are received
@@ -62,3 +67,10 @@ class MalSpiderSpider(scrapy.Spider):
                 f"https://myanimelist.net/animelist/{MalSpiderSpider.MAL_USER_NAME}/load.json?offset={MalSpiderSpider.ANIME_SERIAL_NUMBER}&status={MalSpiderSpider.STATUS}",
                 callback=self.parse,
             )
+
+    def rating_parse(self, response):
+        name = response.css(".title-name strong::text").get()
+        rating = response.css(".score-label::text").get()
+        url = response.url
+
+        print(f"Name: {name} | Rating: {rating}\nlink: {url}\n")
